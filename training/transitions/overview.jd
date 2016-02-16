@@ -1,165 +1,245 @@
-page.title=The Transitions Framework
-
+page.title=Licensing Overview
+parent.title=Application Licensing
+parent.link=index.html
 @jd:body
 
-<div id="tb-wrapper">
-<div id="tb">
-<h2>This lesson covers</h2>
-<ol>
-  <li><a href="#Overview">Overview</a></li>
-  <li><a href="#Scenes">Scenes</a></li>
-  <li><a href="#Transitions">Transitions</a></li>
-  <li><a href="#Limitations">Limitations</a></li>
+
+<div id="qv-wrapper">
+<div id="qv">
+  
+  <h2>Quickview</h2>
+  <ul>
+    <li>Licensing allows you to verify your app was purchased from Google Play</li>
+    <li>Your app maintains control of how it enforces its licensing status</li>
+    <li>The service is free for all developers who publish on Google Play</li>
+  </ul>
+  
+  <h2>In this document</h2>
+  <ol>
+  <li><a href="#Secure">License Responses are Secure</a></li>
+  <li><a href="#LVL">Licensing Verification Library</a></li>
+  <li><a href="#Reqs">Requirements and Limitations</a></li>
+  <li><a href="#CopyProtection">Replacement for Copy Protection</a></li>
 </ol>
+  
 </div>
 </div>
 
-<p>Animating your app's user interface provides more than just visual appeal. Animations
-highlight changes and provide visual cues that help users learn how your app works.</p>
 
-<p>To help you animate a change between one view hierarchy and another, Android provides the
-transitions framework. This framework applies one or more animations to all the views in the
-hierarchies as it changes between them.</p>
+<p>Google Play Licensing is a network-based service that lets an application query a trusted
+Google Play licensing server to determine whether the application is licensed to the current
+device user. The licensing service is based on the capability of the Google Play licensing server
+to determine whether a given user is licensed to use a given application. Google Play considers a
+user to be licensed if the user is a recorded purchaser of the application.</p>
 
-<p>The framework has the following features:</p>
+<p>The request starts when your application makes a request to a service hosted by
+the Google Play client application. The Google Play application then sends a request to
+the licensing server and receives the result. The Google Play application sends
+the result to your application, which can allow or disallow further use of the
+application as needed.</p>
+
+<p class="note"><strong>Note:</strong> If a version of an app is in the alpha or
+beta channel, all users who are authorized to download and install that app are
+considered to be licensed users of the app. For more information, see <a
+href="{@docRoot}distribute/googleplay/developer-console.html#alpha-beta">Alpha
+and Beta Testing</a>.</p>
+
+<div class="figure" style="width:469px">
+<img src="{@docRoot}images/licensing_arch.png" alt=""/>
+<p class="img-caption"><strong>Figure 1.</strong> Your application initiates a
+license check through the License Verification Library and the Google Play
+client, which handles communication with the Google Play server.</p>
+</div>
+
+<p class="note"><strong>Note:</strong> Previously you could test an app by
+uploading an unpublished "draft" version. This functionality is no longer
+supported; instead, you must publish it to the alpha or beta distribution
+channel. For more information, see <a
+href="{@docRoot}google/play/billing/billing_testing.html#draft_apps">Draft Apps
+are No Longer Supported</a>.
+
+<p>To properly identify the user and determine the license status, the licensing server requires
+information about the application and user&mdash;your application and the Google Play client work
+together to assemble the information and the Google Play client passes it to the server. </p>
+
+<p>To help you add licensing to your application, the Android SDK provides a downloadable set of
+library sources that you can include in your application project: the Google Market
+Licensing package. The License Verification Library (LVL) is a library you can add to your
+application that
+handles all of the licensing-related communication with the Google Play licensing service. With
+the LVL added to your application, your application can determine its licensing status for the
+current user by simply calling a method and implementing a callback that receives the status
+response.</p>
+
+<p>Your application does not query the licensing server
+directly, but instead calls the Google Play client over remote IPC to
+initiate a license request. In the license request:</p>
+
+<ul>
+<li>Your application provides: its package name, a nonce that is later used to
+validate any response from the server, and a callback over which the
+response can be returned asynchronously.</li>
+<li>The Google Play client collects the necessary information about the user and the device,
+such as the device's primary Google account username, IMSI, and other
+information. It then sends the license check request to the server on behalf of
+your application.</li>
+<li>The Google Play server evaluates the request using all available information, attempting
+to establish the user's identity to a sufficient level of confidence. The server
+then checks the user identity against purchase records for your application and
+returns a license response, which the Google Play client returns to your
+application over the IPC callback.</li>
+</ul>
+
+<p>You can choose when, and how often, you want your application to check its
+license and you have full control over how it handles the response, verifies the
+signed response data, and enforces access controls.</p>
+
+<p>Notice that during a license check, your application does not manage any
+network connections or use any licensing related APIs in the Android platform.</p>
+
+
+
+
+<h2 id="Secure">License Responses are Secure</h2>
+
+<p>To ensure the integrity of each license query, the server signs the license
+response data using an RSA key pair that is shared exclusively between the Google Play
+server and you.</p>
+
+<p>The licensing service generates a single licensing key pair for each
+application and exposes the public key in your application's 
+<strong>Services & APIs</strong> page in the Developer Console. You must copy 
+the public key from the Developer Console and embed it in your application 
+source code. The server retains the private key internally and uses it to sign 
+license responses for the applications you publish with that account.</p>
+
+<p>When your application receives a signed response, it uses the embedded public
+key to verify the data. The use of public key cryptography in the licensing
+service makes it possible for the application to detect responses that have been
+tampered with or that are spoofed.</p>
+
+
+
+
+<h2 id="LVL">Licensing Verification Library</h2>
+
+<p>The Android SDK provides a downloadable package called the Google Market Licensing package,
+which includes the License Verification Library (LVL). The LVL greatly simplifies the process of
+adding licensing to your application and helps ensure a more secure, robust implementation for your
+application. The LVL provides internal classes that handle most of the standard operations of a
+license query, such as contacting the Google Play client to initiate a license request and
+verifying and validating the responses. It also exposes interfaces that let you easily plug in your
+custom code for defining licensing policy and managing access as needed by your application. The key
+LVL interfaces are: </p>
 
 <dl>
-<dt><em>Group-level animations</em></dt>
-<dd>Applies one or more animation effects to all of the views in a view hierarchy.</dd>
-<dt><em>Transition-based animation</em></dt>
-<dd>Runs animations based on the changes between starting and ending view property values.</dd>
-<dt><em>Built-in animations</em></dt>
-<dd>Includes predefined animations for common effects such as fade out or movement.</dd>
+<dt>{@code Policy}</dt>
+  <dd>Your implementation determines whether to allow access to the
+application, based on the license response received from the server and any
+other data available (such as from a backend server associated with your
+application). The implementation can evaluate the various fields of the license
+response and apply other constraints, if needed. The implementation also lets
+you manage the handling of license checks that result in errors, such as network
+errors.</dd>
 
-<!-- Figure 1 - Transitions video -->
-<div style="float:right;margin-left:30px;margin-top:10px">
-<div class="framed-nexus5-port-span-5" style="clear:left;">
-<video class="play-on-hover" height="442" autoplay="" poster="">
-<source src="{@docRoot}images/transitions/transition_sample_video.mp4" type="video/mp4">
-<source src="{@docRoot}images/transitions/transition_sample_video.ogv" type="video/ogg">
-<source src="{@docRoot}images/transitions/transition_sample_video.webm" type="video/webm">
-</video>
-</div>
-<p class="img-caption" style="margin-top:7px;margin-bottom:0px">
-<strong>Figure 1.</strong> Visual cues using user interface animation.</p>
-<div style="margin-top:5px;margin-bottom:20px;font-size:10pt" class="video-instructions">&nbsp;</div>
-</div>
-
-<dt><em>Resource file support</em></dt>
-<dd>Loads view hierarchies and built-in animations from layout resource files.</dd>
-<dt><em>Lifecycle callbacks</em></dt>
-<dd>Defines callbacks that provide finer control over the animation and hierarchy change
-process.</dd>
+<dt>{@code LicenseCheckerCallback}</dt>
+  <dd>Your implementation manages access to the
+application, based on the result of the {@code Policy} object's handling of the license
+response. Your implementation can manage access in any way needed, including
+displaying the license result in the UI or directing the user to purchase the
+application (if not currently licensed).</dd>
 </dl>
 
 
+<p>To help you get started with a {@code Policy}, the LVL provides two fully complete
+{@code Policy} implementations that you can use without modification or adapt to your
+needs:</p>
 
-<h2 id="Overview">Overview</h2>
+<dl>
+<dt><a href="adding-licensing.html#ServerManagedPolicy">{@code ServerManagedPolicy}</a></dt>
+  <dd>A flexible {@code Policy}
+that uses settings provided by the licensing server to manage response caching
+and access to the application while the device is offline (such as when the
+user is on an airplane). For most applications, the use of
+{@code ServerManagedPolicy} is highly recommended.</dd>
 
-<p>The example in Figure 1 shows how an animation provides visual cues to help the user. As the
-app changes from its search entry screen to its search results screen, it fades out views that
-are no longer in use and fades in new views.</p>
+<dt><a href="adding-licensing.html#StrictPolicy">{@code StrictPolicy}</a></dt>
+  <dd>A restrictive {@code Policy} that
+does not cache any response data and allows the application access <em>only</em>
+when the server returns a licensed response.</dd>
+</dl>
 
-<p>This animation is an example of using the transitions framework. The framework
-animates changes to all the views in two view hierarchies. A view hierarchy can be as simple
-as a single view or as complex as a {@link android.view.ViewGroup} containing an elaborate
-tree of views. The framework animates each view by changing one or more of its property values
-over time between the initial or <em>starting</em> view hierarchy and the final or <em>ending</em>
-view hierarchy.</p>
+<p>The LVL is available as a downloadable package of the Android SDK. The
+package includes both the LVL itself and an example application that shows how
+the library should be integrated with your application and how your application
+should manage response data, UI interaction, and error conditions. </p>
 
-<p>The transitions framework works in parallel with view hierarchies and animations. The
-purpose of the framework is to store the state of view hierarchies, change between these
-hierarchies in order to modify the appearance of the device screen, and animate the change by
-storing and applying animation definitions.</p>
-
-<p>The diagram in Figure 2 illustrates the relationship between view hierarchies, framework
-objects, and animations:</p>
-
-<!-- Figure 2 - diagram -->
-<img src="{@docRoot}images/transitions/transitions_diagram.png"
-     width="506" height="234" alt="" style="margin-top:7px" />
-<p class="img-caption"><strong>Figure 2.</strong> Relationships in the transitions framework.</p>
-
-<p>The transitions framework provides abstractions for scenes, transitions, and transition
-managers. These are described in detail in the following sections. To use the framework, you
-create scenes for the view hierarchies in your app that you plan to change between. Next, you
-create a transition for each animation you want to use. To start the animation between two
-view hierarchies, you use a transition manager specifying the transition to use and the ending
-scene. This procedure is described in detail in the remaining lessons in this class.</p>
+<p>The LVL sources are provided as an Android <em>library project</em>, which
+means that you can maintain a single set of library sources and share them
+across multiple applications. A full test environment is also available through
+the SDK, so you can develop and test the licensing implementation in your
+applications before publishing them, even if you don't have access to a
+physical device.</p>
 
 
 
-<h2 id="Scenes">Scenes</h2>
 
-<p>A scene stores the state of a view hierarchy, including all its views and their property
-values. A view hierarchy can be a simple view or a complex tree of views and child layouts.
-Storing the view hierarchy state in a scene enables you to transition into that state from
-another scene. The framework provides the {@link android.transition.Scene} class to represent
-a scene.</p>
+<h2 id="Reqs">Requirements and Limitations</h2>
 
-<p>The transitions framework lets you create scenes from layout resource files or from
-{@link android.view.ViewGroup} objects in your code. Creating a scene in your code is useful
-if you generated a view hierarchy dynamically or if you are modifying it at runtime.</p>
+<p>Google Play Licensing is designed to let you apply license controls to
+applications that you publish through Google Play. The service is not
+designed to let you control access to applications that are not published
+through Google Play or that are run on devices that do not offer the Google
+Play client. </p>
 
-<p>In most cases, you do not create a starting scene explicitly. If you have applied a
-transition, the framework uses the previous ending scene as the starting scene for any
-subsequent transitions. If you have not applied a transition, the framework collects information
-about the views from the current state of the screen.</p>
-
-<p>A scene can also define its own actions that run when you make a scene change. For example,
-this feature is useful for cleaning up view settings after you transition to a scene.</p>
-
-<p>In addition to the view hierarchy and its property values, a scene also stores a reference
-to the parent of the view hierarchy. This root view is called a <strong>scene root</strong>.
-Changes to the scene and animations that affect the scene occur within the scene root.</p>
-
-<p>To learn how to create scenes, see
-<a href="{@docRoot}training/transitions/scenes.html">Creating a Scene</a>.</p>
-
-
-
-<h2 id="Transitions">Transitions</h2>
-
-<p>In the transitions framework, animations create a series of frames that depict a change
-between the view hierarchies in the starting and ending scenes. Information about the animation
-is stored in a {@link android.transition.Transition} object. To run the animation, you apply the
-transition using a {@link android.transition.TransitionManager} instance. The framework can
-transition between two different scenes or transition to a different state for the current
-scene.</p>
-
-<p>The framework includes a set of built-in transitions for commonly-used animation effects,
-such as fading and resizing views. You can also define your own custom transitions to create
-an animation effect using the APIs in the animations framework. The transitions framework also
-enables you to combine different animation effects in a transition set that contains a group
-of individual built-in or custom transitions.</p>
-
-<p>The transition lifecycle is similar to the activity lifecycle, and it represents the
-transition states that the framework monitors between the start and the completion of an
-animation. At important lifecycle states, the framework invokes callback methods that you can
-implement to make adjustments to your user interface at different phases of the transition.</p>
-
-<p>To learn more about transitions, see
-<a href="{@docRoot}training/transitions/transitions.html">Applying a Transition</a> and
-<a href="{@docRoot}training/transitions/custom-transitions.html">Creating Custom
-Transitions</a>.</p>
-
-
-
-<h2 id="Limitations">Limitations</h2>
-
-<p>This section lists some known limitations of the transitions framework:</p>
+<p>Here are some points to keep in mind as you implement licensing in your
+application: </p>
 
 <ul>
-<li>Animations applied to a {@link android.view.SurfaceView} may not appear correctly.
-{@link android.view.SurfaceView} instances are updated from a non-UI thread, so the updates
-may be out of sync with the animations of other views.</li>
-<li>Some specific transition types may not produce the desired animation effect when applied
-to a {@link android.view.TextureView}.</li>
-<li>Classes that extend {@link android.widget.AdapterView}, such as
-{@link android.widget.ListView}, manage their child views in ways that are incompatible with
-the transitions framework. If you try to animate a view based on
-{@link android.widget.AdapterView}, the device display may hang.</li>
-<li>If you try to resize a {@link android.widget.TextView} with an animation, the text will
-pop to a new location before the object has completely resized. To avoid this problem, do not
-animate the resizing of views that contain text.</li>
+<li>An application can use the service only if the Google Play client is
+installed on its host device and the device is running a supported version of the Android
+platform.</li>
+<li>To complete a license check, the licensing server must be accessible over
+the network. You can implement license caching behaviors to manage access to your application when
+there is no network connectivity. </li>
+<li>The security of your application's licensing controls ultimately relies on
+the design of your implementation itself. The service provides the building
+blocks that let you securely check licensing, but the actual enforcement and
+handling of the license are factors are up to you. By following the best
+practices in the following documents, you can help ensure that your implementation will be
+secure.</li>
+<li>Adding licensing to an application does not affect the way the application
+functions when run on a device that does not offer Google Play.</li>
+<li>You can implement licensing controls for a free app, but only if you're using the service to 
+provide <a
+href="{@docRoot}google/play/expansion-files.html">APK expansion files</a>.</li>
 </ul>
+
+
+
+<h2 id="CopyProtection">Replacement for Copy Protection</h2>
+
+<p>Google Play Licensing is a flexible, secure mechanism for controlling
+access to your applications. It effectively replaces the Copy Protection
+mechanism (no longer supported) that was previously offered on Google Play and
+gives you wider distribution potential for your applications. </p>
+
+<p>Licensing lets you move to a license-based model that is enforceable on
+all devices that have access to Google Play. Access is not bound to the
+characteristics of the host device, but to your
+application on Google Play (through the app's public key) and the
+licensing policy that you define. Your application can be installed and
+managed on any device on any storage, including SD card.</p>
+
+<p>Although no license mechanism can completely prevent all unauthorized use,
+the licensing service lets you control access for most types of normal usage,
+across all compatible devices, locked or unlocked.</p>
+
+<p>To begin adding application licensing to your application, continue to <a
+href="{@docRoot}google/play/licensing/setting-up.html">Setting Up for Licensing</a>.</p>
+
+
+
+
+
+
