@@ -24,12 +24,12 @@ page.image=images/cards/android-devices_2x.jpg
 
 <div id="landing-graphic-container">
   <div id="text-overlay">
-    <p itemprop="description">Change on old/master - The device-centric UI principles, overviews, and detailed guidelines
+    <p itemprop="description">The device-centric UI principles, overviews, and detailed guidelines
       described here build on the core <a href="{@docRoot}design/get-started/principles.html">Android Design Principles</a>
       to provide more specific design guidance for different form factors.
     </p>
     <p>
-    <a href="{@docRoot}design/handhelds/index.html" class="landing-page-link">Phones &amp; Tablets</a></p>
+    <a href="{@docRoot}design/handhelds/index.html" class="landing-page-link">Phones &amp; Tablets -  Change on new/master </a></p>
   </div>
   <a id="hero-image" href="{@docRoot}design/handhelds/index.html">
     <img src="{@docRoot}design/media/device_family.png">
