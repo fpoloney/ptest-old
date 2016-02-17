@@ -29,7 +29,7 @@ page.image=images/cards/android-devices_2x.jpg
       to provide more specific design guidance for different form factors.
     </p>
     <p>
-    <a href="{@docRoot}design/handhelds/index.html" class="landing-page-link">Phones &amp; Tablets -  Change on new/master </a></p>
+    <a href="{@docRoot}design/handhelds/index.html" class="landing-page-link">Phones &amp; Change for PTest 2 - ignore other change on this line - Tablets</a></p>
   </div>
   <a id="hero-image" href="{@docRoot}design/handhelds/index.html">
     <img src="{@docRoot}design/media/device_family.png">
